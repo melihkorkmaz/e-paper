@@ -54,3 +54,6 @@ export const PRINTER = {
 };
 export const PRINTER_SCRIPT = join(ROOT, "python", "printer.py");
 export const PRINTER_REFRESH_MS = 15_000;
+
+// Local web config app (accessed over LAN from a browser).
+export const WEB_PORT = Number(process.env.WEB_PORT ?? 8080);

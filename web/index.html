@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>e-Paper Dashboard — Config</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font: 15px/1.5 system-ui, sans-serif; max-width: 640px; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.4rem; }
+    fieldset { border: 1px solid #8884; border-radius: 8px; margin: 1rem 0; padding: 1rem; }
+    legend { font-weight: 600; padding: 0 .4rem; }
+    label { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin: .4rem 0; }
+    input[type="text"], input[type="number"], input[type="url"] { width: 220px; padding: .3rem; }
+    .row { display: flex; gap: .5rem; align-items: center; }
+    button { padding: .5rem 1rem; border-radius: 8px; border: 1px solid #8886; cursor: pointer; font: inherit; }
+    button.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+    button.warn { background: #b45309; color: #fff; border-color: #b45309; }
+    #status { min-height: 1.4em; margin-left: .5rem; }
+    .mode { font-weight: 600; }
+    .err { color: #dc2626; white-space: pre-wrap; }
+    .ok { color: #16a34a; }
+  </style>
+</head>
+<body>
+  <h1>e-Paper Dashboard</h1>
+  <p>Current mode: <span id="mode" class="mode">…</span></p>
+
+  <div class="row">
+    <button id="sleep" class="warn" type="button">Sleep now</button>
+    <button id="wake" type="button">Resume</button>
+    <span id="override"></span>
+  </div>
+
+  <form id="form">
+    <fieldset>
+      <legend>Schedule</legend>
+      <label>Day start (HH:MM) <input type="text" name="schedule.dayStart" /></label>
+      <label>Day end (HH:MM) <input type="text" name="schedule.dayEnd" /></label>
+      <label>Night start (HH:MM) <input type="text" name="schedule.nightStart" /></label>
+      <label>Weekday precise (minute-aligned) <input type="checkbox" name="schedule.weekdayPrecise" /></label>
+      <label>Evening cadence (min) <input type="number" name="schedule.eveningCadenceMin" min="1" max="120" /></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Location</legend>
+      <label>Latitude <input type="number" name="location.lat" step="any" /></label>
+      <label>Longitude <input type="number" name="location.lon" step="any" /></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Refresh intervals (ms)</legend>
+      <label>Weather <input type="number" name="intervals.weatherMs" min="1000" /></label>
+      <label>Ping <input type="number" name="intervals.pingMs" min="1000" /></label>
+      <label>Spotify <input type="number" name="intervals.spotifyMs" min="1000" /></label>
+      <label>Claude <input type="number" name="intervals.claudeMs" min="1000" /></label>
+      <label>Printer <input type="number" name="intervals.printerMs" min="1000" /></label>
+    </fieldset>
+
+    <div class="row">
+      <button class="primary" type="submit">Save</button>
+      <span id="status"></span>
+    </div>
+  </form>
+
+  <script>
+    const $ = (s) => document.querySelector(s);
+    const form = $("#form");
+
+    function setField(name, value) {
+      const el = form.elements[name];
+      if (!el) return;
+      if (el.type === "checkbox") el.checked = !!value;
+      else el.value = value;
+    }
+
+    function fill(s) {
+      for (const [section, obj] of Object.entries(s)) {
+        if (section === "override") continue;
+        for (const [k, v] of Object.entries(obj)) setField(`${section}.${k}`, v);
+      }
+    }
+
+    function collect() {
+      const out = { schedule: {}, location: {}, intervals: {} };
+      for (const el of form.elements) {
+        if (!el.name || !el.name.includes(".")) continue;
+        const [sec, key] = el.name.split(".");
+        if (el.type === "checkbox") out[sec][key] = el.checked;
+        else if (el.type === "number") out[sec][key] = Number(el.value);
+        else out[sec][key] = el.value;
+      }
+      return out;
+    }
+
+    async function load() {
+      const r = await fetch("/api/config");
+      const { settings, mode } = await r.json();
+      fill(settings);
+      $("#mode").textContent = mode;
+      const until = settings.override?.sleepUntil;
+      $("#override").textContent = until ? `(sleeping until ${new Date(until).toLocaleString()})` : "";
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const status = $("#status");
+      status.textContent = "Saving…"; status.className = "";
+      const r = await fetch("/api/config", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(collect()),
+      });
+      const result = await r.json();
+      if (result.ok) { status.textContent = "Saved"; status.className = "ok"; }
+      else { status.textContent = (result.errors || ["error"]).join("\n"); status.className = "err"; }
+      load();
+    });
+
+    $("#sleep").addEventListener("click", async () => {
+      await fetch("/api/sleep", { method: "POST" });
+      load();
+    });
+    $("#wake").addEventListener("click", async () => {
+      await fetch("/api/wake", { method: "POST" });
+      load();
+    });
+
+    load();
+    setInterval(load, 30000);
+  </script>
+</body>
+</html>

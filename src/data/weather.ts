@@ -1,4 +1,4 @@
-import { LOCATION_LAT, LOCATION_LON } from "../config.js";
+import { getSettings } from "../settings.js";
 import {
   MOCK_WEATHER,
   type WeatherData,
@@ -44,12 +44,13 @@ function sliceForecast(
 
 /** Fetches current weather + AQI from open-meteo. Returns null on any failure. */
 async function fetchWeather(now: Date): Promise<WeatherData | null> {
+  const { lat, lon } = getSettings().location;
   const wUrl =
-    `${WEATHER_URL}?latitude=${LOCATION_LAT}&longitude=${LOCATION_LON}` +
+    `${WEATHER_URL}?latitude=${lat}&longitude=${lon}` +
     "&current=temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m,wind_direction_10m,weather_code,is_day,uv_index" +
     "&hourly=temperature_2m,weather_code&timezone=auto&forecast_days=2";
   const aUrl =
-    `${AQI_URL}?latitude=${LOCATION_LAT}&longitude=${LOCATION_LON}` +
+    `${AQI_URL}?latitude=${lat}&longitude=${lon}` +
     "&current=european_aqi&timezone=auto";
 
   try {

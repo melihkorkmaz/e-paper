@@ -9,3 +9,4 @@ __pycache__/
 claude_creds.json
 usage.json
 claude_monitor.log
+config.json

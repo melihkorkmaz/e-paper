@@ -1,41 +1,98 @@
 import { createFrame, writeFramePng } from "./render/canvas.js";
 import { renderScreen } from "./render/screen.js";
+import { renderGoodnight } from "./render/goodnight.js";
 import { pushFrame } from "./display.js";
 import { nextRefresh } from "./refresh.js";
-import {
-  FRAME_PATH,
-  RENDER_INTERVAL_MS,
-  WEATHER_REFRESH_MS,
-  PING_REFRESH_MS,
-  SPOTIFY_REFRESH_MS,
-  CLAUDE_REFRESH_MS,
-  PRINTER_REFRESH_MS,
-} from "./config.js";
+import { FRAME_PATH } from "./config.js";
 import { preloadIcons } from "./render/icons.js";
+import { getSettings, updateSettings } from "./settings.js";
+import { getMode, nextDelayMs, nextOccurrence, type Mode } from "./schedule.js";
+import { startServer } from "./server.js";
 import { refreshWeather } from "./data/weather.js";
 import { refreshInternet } from "./data/internet.js";
 import { refreshSpotify } from "./data/spotify.js";
 import { refreshClaude } from "./data/claude.js";
 import { refreshPrinter } from "./data/printer.js";
 
-async function renderAndPush(counter: number): Promise<number> {
+let counter = 600; // 600 forces a full refresh on the first frame
+let lastMode: Mode | null = null;
+
+/** Renders the normal dashboard. `forceFull` clears the panel (startup / waking). */
+async function renderDashboard(forceFull: boolean): Promise<void> {
   const decision = nextRefresh(counter);
+  const full = forceFull || decision.full;
+  counter = full ? 0 : decision.counter;
   try {
     const { canvas, ctx } = createFrame();
     renderScreen(ctx, new Date());
     writeFramePng(canvas, FRAME_PATH);
-    // skip this while testing, since it requires a running display server and the display service to be running
-    await pushFrame(FRAME_PATH, decision.full);
-    console.log(`[render] pushed frame (full=${decision.full})`);
+    await pushFrame(FRAME_PATH, full);
+    console.log(`[render] dashboard (full=${full})`);
   } catch (err) {
-    console.error(`[render] frame failed: ${(err as Error).message}`);
+    console.error(`[render] dashboard failed: ${(err as Error).message}`);
   }
-  return decision.counter;
+}
+
+/** Renders the full-screen "Sleeping until …" night card once (full refresh). */
+async function renderNight(): Promise<void> {
+  try {
+    const now = new Date();
+    const s = getSettings();
+    const wake = s.override.sleepUntil
+      ? new Date(s.override.sleepUntil)
+      : nextOccurrence(s.schedule.dayStart, now);
+    const { canvas, ctx } = createFrame();
+    renderGoodnight(ctx, wake);
+    writeFramePng(canvas, FRAME_PATH);
+    await pushFrame(FRAME_PATH, true);
+    counter = 0;
+    console.log("[render] goodnight");
+  } catch (err) {
+    console.error(`[render] goodnight failed: ${(err as Error).message}`);
+  }
+}
+
+/** Self-scheduling render loop driven by the time-of-day schedule. */
+async function tick(): Promise<void> {
+  const now = new Date();
+  let s = getSettings();
+
+  // Clear an expired manual override so it doesn't linger past morning.
+  if (s.override.sleepUntil && now.getTime() >= new Date(s.override.sleepUntil).getTime()) {
+    updateSettings({ override: { sleepUntil: null } });
+    s = getSettings();
+  }
+
+  const mode = getMode(now, s);
+  if (mode === "night") {
+    if (lastMode !== "night") await renderNight(); // render once on entering night
+    // else: panel stays frozen
+  } else {
+    await renderDashboard(lastMode === "night"); // full refresh when waking
+  }
+  lastMode = mode;
+
+  setTimeout(() => void tick(), nextDelayMs(new Date(), getSettings(), mode));
+}
+
+/** Self-rescheduling poller that reads its interval from settings each tick and pauses at night. */
+function poll(fn: () => Promise<unknown>, intervalMs: () => number): void {
+  const run = async (): Promise<void> => {
+    if (getMode(new Date(), getSettings()) !== "night") {
+      try {
+        await fn();
+      } catch {
+        // data layers degrade gracefully on their own
+      }
+    }
+    setTimeout(() => void run(), intervalMs());
+  };
+  setTimeout(() => void run(), intervalMs());
 }
 
 async function main(): Promise<void> {
   const once = process.argv.includes("--once");
-  // Preload assets once; the render loop stays synchronous.
+
   await preloadIcons([
     "icon_spotify",
     "icon_3d",
@@ -51,51 +108,35 @@ async function main(): Promise<void> {
   ]);
 
   // Fetch live data before the first frame so it shows immediately.
-  await Promise.all([
-    refreshWeather(new Date()),
-    refreshInternet(),
-    refreshSpotify(),
-  ]);
-
-  // Claude usage and printer status run Python subprocesses (several seconds) —
-  // don't block the first frame; let a later render pick up the result.
+  await Promise.all([refreshWeather(new Date()), refreshInternet(), refreshSpotify()]);
   void refreshClaude();
   void refreshPrinter();
 
-  // First frame always forces a full refresh (clears the panel), like main.py startup.
-  let counter = await renderAndPush(600);
-  if (once) return;
+  if (once) {
+    const mode = getMode(new Date(), getSettings());
+    if (mode === "night") await renderNight();
+    else await renderDashboard(true);
+    return;
+  }
 
-  setInterval(() => {
-    void renderAndPush(counter).then((c) => {
-      counter = c;
-    });
-  }, RENDER_INTERVAL_MS);
+  startServer();
+  void tick();
 
-  // Refresh weather on its own slow cadence; failures keep the last good value.
-  setInterval(() => {
-    void refreshWeather(new Date());
-  }, WEATHER_REFRESH_MS);
-
-  // Sample internet latency on its faster cadence.
-  setInterval(() => {
-    void refreshInternet();
-  }, PING_REFRESH_MS);
-
-  // Poll Last.fm for the current track.
-  setInterval(() => {
-    void refreshSpotify();
-  }, SPOTIFY_REFRESH_MS);
-
-  // Refresh Claude usage via claude.py on its slow cadence.
-  setInterval(() => {
-    void refreshClaude();
-  }, CLAUDE_REFRESH_MS);
-
-  // Poll the Bambu printer via python/printer.py.
-  setInterval(() => {
-    void refreshPrinter();
-  }, PRINTER_REFRESH_MS);
+  // Self-rescheduling data pollers; intervals are read live from settings.
+  poll(() => refreshWeather(new Date()), () => getSettings().intervals.weatherMs);
+  poll(() => refreshInternet(), () => getSettings().intervals.pingMs);
+  poll(() => refreshSpotify(), () => getSettings().intervals.spotifyMs);
+  poll(() => refreshClaude(), () => getSettings().intervals.claudeMs);
+  poll(() => refreshPrinter(), () => getSettings().intervals.printerMs);
 }
+
+// Kiosk resilience: log unexpected errors instead of exiting (which, under a
+// restart supervisor, would crash-loop and full-refresh the panel each time).
+process.on("unhandledRejection", (e) => {
+  console.error(`[fatal] unhandled rejection: ${String(e)}`);
+});
+process.on("uncaughtException", (e) => {
+  console.error(`[fatal] uncaught exception: ${e instanceof Error ? e.stack : String(e)}`);
+});
 
 void main();

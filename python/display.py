@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Thin display shim: PNG -> 1-bit -> Waveshare 10.85" panel.
-# Usage: python3 display.py <png_path> [--full]
+# Usage: python3 display.py <png_path> [--full] [--dither]
 import sys
 import os
 import time
@@ -13,12 +13,15 @@ from waveshare_epd import epd10in85
 
 def main():
     if len(sys.argv) < 2:
-        print('usage: display.py <png_path> [--full]', file=sys.stderr)
+        print('usage: display.py <png_path> [--full] [--dither]', file=sys.stderr)
         sys.exit(2)
     png_path = sys.argv[1]
-    full = '--full' in sys.argv[2:]
+    flags = sys.argv[2:]
+    full = '--full' in flags
+    # Dashboard text wants crisp thresholding (NONE); photos look better dithered.
+    dither = Image.Dither.FLOYDSTEINBERG if '--dither' in flags else Image.Dither.NONE
 
-    img = Image.open(png_path).convert('1', dither=Image.Dither.NONE)
+    img = Image.open(png_path).convert('1', dither=dither)
 
     epd = epd10in85.EPD()
     if full:

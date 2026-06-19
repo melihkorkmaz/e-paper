@@ -1,0 +1,18 @@
+{
+  "schedule": {
+    "dayStart": "07:30",
+    "dayEnd": "17:00",
+    "nightStart": "22:00",
+    "weekdayPrecise": true,
+    "eveningCadenceMin": 5
+  },
+  "location": { "lat": 51.688, "lon": 5.197 },
+  "intervals": {
+    "weatherMs": 600000,
+    "pingMs": 20000,
+    "spotifyMs": 20000,
+    "claudeMs": 600000,
+    "printerMs": 15000
+  },
+  "override": { "sleepUntil": null }
+}
