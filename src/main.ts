@@ -24,7 +24,19 @@ async function renderAndPush(counter: number): Promise<number> {
 async function main(): Promise<void> {
   const once = process.argv.includes("--once");
   // Preload assets once; the render loop stays synchronous.
-  await preloadIcons(["icon_spotify", "icon_3d"]);
+  await preloadIcons([
+    "icon_spotify",
+    "icon_3d",
+    "icon_wifi",
+    "icon_sun",
+    "icon_moon",
+    "icon_partly-cloudy-day",
+    "icon_clouds",
+    "icon_wind",
+    "icon_rain",
+    "icon_snow",
+    "icon_storm",
+  ]);
   await loadSpotifyAssets();
   // First frame always forces a full refresh (clears the panel), like main.py startup.
   let counter = await renderAndPush(600);
