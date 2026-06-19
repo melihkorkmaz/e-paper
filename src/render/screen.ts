@@ -3,7 +3,8 @@ import { PANEL_WIDTH, PANEL_HEIGHT } from "../config.js";
 import { line } from "./draw.js";
 import { renderSpotify, MOCK_SPOTIFY } from "./widgets/spotify.js";
 import { renderPrinter, MOCK_PRINTER } from "./widgets/printer.js";
-import { renderInternet, MOCK_INTERNET } from "./widgets/internet.js";
+import { renderInternet } from "./widgets/internet.js";
+import { getInternet } from "../data/internet.js";
 import { renderWeather } from "./widgets/weather.js";
 import { getWeather } from "../data/weather.js";
 import { renderClock } from "./widgets/clock.js";
@@ -47,7 +48,7 @@ export function renderScreen(ctx: SKRSContext2D, now: Date): void {
 
   // Column 1, row 3: Internet quality
   line(ctx, COL_DEFAULT_PAD, ROW_DIVIDER_2, COL_W - COL_DEFAULT_PAD, ROW_DIVIDER_2);
-  renderInternet(ctx, COL_DEFAULT_PAD, ROW3_Y, COL_CONTENT_W, MOCK_INTERNET);
+  renderInternet(ctx, COL_DEFAULT_PAD, ROW3_Y, COL_CONTENT_W, getInternet());
 
   // Column 2: Weather (full column, live data)
   renderWeather(ctx, COL_W + COL_DEFAULT_PAD, COL_CONTENT_W, getWeather());

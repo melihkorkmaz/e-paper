@@ -20,3 +20,8 @@ export const LOCATION_LON = 5.196984958269829;
 
 // Weather is refreshed on its own slow cadence (main.py: 600s).
 export const WEATHER_REFRESH_MS = 600_000;
+
+// Internet quality is sampled by pinging this host (main.py: every 20s).
+export const PING_HOST = "8.8.8.8";
+export const PING_REFRESH_MS = 20_000;
+export const PING_HISTORY_MAX = 50;

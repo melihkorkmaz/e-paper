@@ -1,15 +1,17 @@
 import { createFrame, writeFramePng } from "./render/canvas.js";
 import { renderScreen } from "./render/screen.js";
-// import { pushFrame } from "./display.js";
+import { pushFrame } from "./display.js";
 import { nextRefresh } from "./refresh.js";
 import {
   FRAME_PATH,
   RENDER_INTERVAL_MS,
   WEATHER_REFRESH_MS,
+  PING_REFRESH_MS,
 } from "./config.js";
 import { loadSpotifyAssets } from "./render/widgets/spotify.js";
 import { preloadIcons } from "./render/icons.js";
 import { refreshWeather } from "./data/weather.js";
+import { refreshInternet } from "./data/internet.js";
 
 async function renderAndPush(counter: number): Promise<number> {
   const decision = nextRefresh(counter);
@@ -18,7 +20,7 @@ async function renderAndPush(counter: number): Promise<number> {
     renderScreen(ctx, new Date());
     writeFramePng(canvas, FRAME_PATH);
     // skip this while testing, since it requires a running display server and the display service to be running
-    // await pushFrame(FRAME_PATH, decision.full)
+    await pushFrame(FRAME_PATH, decision.full);
     console.log(`[render] pushed frame (full=${decision.full})`);
   } catch (err) {
     console.error(`[render] frame failed: ${(err as Error).message}`);
@@ -44,8 +46,8 @@ async function main(): Promise<void> {
   ]);
   await loadSpotifyAssets();
 
-  // Fetch weather before the first frame so it shows live data immediately.
-  await refreshWeather(new Date());
+  // Fetch live data before the first frame so it shows immediately.
+  await Promise.all([refreshWeather(new Date()), refreshInternet()]);
 
   // First frame always forces a full refresh (clears the panel), like main.py startup.
   let counter = await renderAndPush(600);
@@ -61,6 +63,11 @@ async function main(): Promise<void> {
   setInterval(() => {
     void refreshWeather(new Date());
   }, WEATHER_REFRESH_MS);
+
+  // Sample internet latency on its faster cadence.
+  setInterval(() => {
+    void refreshInternet();
+  }, PING_REFRESH_MS);
 }
 
 void main();
