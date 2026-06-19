@@ -1,3 +1,4 @@
 node_modules/
 dist/
 /tmp/epaper-frame.png
+.scratch/
