@@ -1,6 +1,4 @@
-import { loadImage, type Image, type SKRSContext2D } from "@napi-rs/canvas";
-import { join } from "node:path";
-import { ROOT } from "../../config.js";
+import type { Image, SKRSContext2D } from "@napi-rs/canvas";
 import { getIcon } from "../icons.js";
 
 /** Now-playing snapshot. Mirrors main.py's data_store.spotify shape. */
@@ -10,23 +8,6 @@ export interface SpotifyData {
   track: string;
   /** Decoded cover art, or null to fall back to the placeholder box. */
   cover: Image | null;
-}
-
-/** Placeholder mock until Last.fm fetching is wired up. */
-export const MOCK_SPOTIFY: SpotifyData = {
-  status: "PAUSED",
-  artist: "Brian Eno",
-  track: "By This River",
-  cover: null,
-};
-
-/** Loads the mock cover art into MOCK_SPOTIFY. Call once at startup. */
-export async function loadSpotifyAssets(): Promise<void> {
-  try {
-    MOCK_SPOTIFY.cover = await loadImage(join(ROOT, "assets", "mock", "cover.png"));
-  } catch {
-    MOCK_SPOTIFY.cover = null;
-  }
 }
 
 const COVER_SIZE = 96;

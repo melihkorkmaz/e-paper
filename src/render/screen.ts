@@ -1,7 +1,8 @@
 import type { SKRSContext2D } from "@napi-rs/canvas";
 import { PANEL_WIDTH, PANEL_HEIGHT } from "../config.js";
 import { line } from "./draw.js";
-import { renderSpotify, MOCK_SPOTIFY } from "./widgets/spotify.js";
+import { renderSpotify } from "./widgets/spotify.js";
+import { getSpotify } from "../data/spotify.js";
 import { renderPrinter, MOCK_PRINTER } from "./widgets/printer.js";
 import { renderInternet } from "./widgets/internet.js";
 import { getInternet } from "../data/internet.js";
@@ -40,7 +41,7 @@ export function renderScreen(ctx: SKRSContext2D, now: Date): void {
   line(ctx, COL_W * 2, 0, COL_W * 2, PANEL_HEIGHT);
 
   // Column 1, row 1: Spotify now-playing (top-left)
-  renderSpotify(ctx, COL_DEFAULT_PAD, COL_TOP_PAD, COL_CONTENT_W, MOCK_SPOTIFY);
+  renderSpotify(ctx, COL_DEFAULT_PAD, COL_TOP_PAD, COL_CONTENT_W, getSpotify());
 
   // Column 1, row 2: Bambu printer status
   line(ctx, COL_DEFAULT_PAD, ROW_DIVIDER_1, COL_W - COL_DEFAULT_PAD, ROW_DIVIDER_1);
