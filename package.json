@@ -1,0 +1,22 @@
+{
+  "name": "epaper-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node --max-old-space-size=256 dist/main.js",
+    "dev": "tsx src/main.ts",
+    "test": "vitest run",
+    "render:once": "tsx src/main.ts --once"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.58"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
