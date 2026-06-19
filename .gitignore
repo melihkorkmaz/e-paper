@@ -6,3 +6,6 @@ __pycache__/
 *.pyc
 
 .env
+claude_creds.json
+usage.json
+claude_monitor.log

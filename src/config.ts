@@ -39,3 +39,9 @@ export const LASTFM = {
   username: process.env.LASTFM_USERNAME ?? "",
 };
 export const SPOTIFY_REFRESH_MS = 20_000;
+
+// Claude usage is fetched by shelling out to claude.py (main.py: every 600s).
+export const PYTHON_BIN = process.env.PYTHON_BIN ?? "python3";
+export const CLAUDE_SCRIPT = join(ROOT, "claude.py");
+export const CLAUDE_USAGE_FILE = join(ROOT, "usage.json");
+export const CLAUDE_REFRESH_MS = 600_000;

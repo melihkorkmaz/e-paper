@@ -9,7 +9,8 @@ import { getInternet } from "../data/internet.js";
 import { renderWeather } from "./widgets/weather.js";
 import { getWeather } from "../data/weather.js";
 import { renderClock } from "./widgets/clock.js";
-import { renderClaude, MOCK_CLAUDE } from "./widgets/claude.js";
+import { renderClaude } from "./widgets/claude.js";
+import { getClaude } from "../data/claude.js";
 
 /** Width of a single column. main.py: `col_w = epd.width // 3`. */
 const COL_W = Math.floor(PANEL_WIDTH / 3);
@@ -60,5 +61,5 @@ export function renderScreen(ctx: SKRSContext2D, now: Date): void {
   line(ctx, col3x, COL3_MID, PANEL_WIDTH - COL_DEFAULT_PAD, COL3_MID);
 
   // Column 3, row 2 (bottom half): Claude usage
-  renderClaude(ctx, col3x, COL3_CLAUDE_Y, COL_CONTENT_W, MOCK_CLAUDE);
+  renderClaude(ctx, col3x, COL3_CLAUDE_Y, COL_CONTENT_W, getClaude());
 }
