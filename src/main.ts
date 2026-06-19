@@ -2,9 +2,14 @@ import { createFrame, writeFramePng } from "./render/canvas.js";
 import { renderScreen } from "./render/screen.js";
 // import { pushFrame } from "./display.js";
 import { nextRefresh } from "./refresh.js";
-import { FRAME_PATH, RENDER_INTERVAL_MS } from "./config.js";
+import {
+  FRAME_PATH,
+  RENDER_INTERVAL_MS,
+  WEATHER_REFRESH_MS,
+} from "./config.js";
 import { loadSpotifyAssets } from "./render/widgets/spotify.js";
 import { preloadIcons } from "./render/icons.js";
+import { refreshWeather } from "./data/weather.js";
 
 async function renderAndPush(counter: number): Promise<number> {
   const decision = nextRefresh(counter);
@@ -38,6 +43,10 @@ async function main(): Promise<void> {
     "icon_storm",
   ]);
   await loadSpotifyAssets();
+
+  // Fetch weather before the first frame so it shows live data immediately.
+  await refreshWeather(new Date());
+
   // First frame always forces a full refresh (clears the panel), like main.py startup.
   let counter = await renderAndPush(600);
   if (once) return;
@@ -47,6 +56,11 @@ async function main(): Promise<void> {
       counter = c;
     });
   }, RENDER_INTERVAL_MS);
+
+  // Refresh weather on its own slow cadence; failures keep the last good value.
+  setInterval(() => {
+    void refreshWeather(new Date());
+  }, WEATHER_REFRESH_MS);
 }
 
 void main();

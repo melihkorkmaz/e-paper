@@ -4,7 +4,8 @@ import { line } from "./draw.js";
 import { renderSpotify, MOCK_SPOTIFY } from "./widgets/spotify.js";
 import { renderPrinter, MOCK_PRINTER } from "./widgets/printer.js";
 import { renderInternet, MOCK_INTERNET } from "./widgets/internet.js";
-import { renderWeather, MOCK_WEATHER } from "./widgets/weather.js";
+import { renderWeather } from "./widgets/weather.js";
+import { getWeather } from "../data/weather.js";
 import { renderClock } from "./widgets/clock.js";
 import { renderClaude, MOCK_CLAUDE } from "./widgets/claude.js";
 
@@ -48,8 +49,8 @@ export function renderScreen(ctx: SKRSContext2D, now: Date): void {
   line(ctx, COL_DEFAULT_PAD, ROW_DIVIDER_2, COL_W - COL_DEFAULT_PAD, ROW_DIVIDER_2);
   renderInternet(ctx, COL_DEFAULT_PAD, ROW3_Y, COL_CONTENT_W, MOCK_INTERNET);
 
-  // Column 2: Weather (full column)
-  renderWeather(ctx, COL_W + COL_DEFAULT_PAD, COL_CONTENT_W, MOCK_WEATHER);
+  // Column 2: Weather (full column, live data)
+  renderWeather(ctx, COL_W + COL_DEFAULT_PAD, COL_CONTENT_W, getWeather());
 
   // Column 3, row 1 (top half): time + date
   const col3x = COL_W * 2 + COL_DEFAULT_PAD;

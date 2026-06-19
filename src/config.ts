@@ -13,3 +13,10 @@ export const FONT_DIR = join(ROOT, "assets", "fonts");
 export const DISPLAY_SCRIPT = join(ROOT, "python", "display.py");
 export const RENDER_INTERVAL_MS = 60_000;
 export const DISPLAY_TIMEOUT_MS = 25_000;
+
+// Change to your GEO location (defaults from main.py).
+export const LOCATION_LAT = 51.68819911038824;
+export const LOCATION_LON = 5.196984958269829;
+
+// Weather is refreshed on its own slow cadence (main.py: 600s).
+export const WEATHER_REFRESH_MS = 600_000;
