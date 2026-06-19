@@ -5,16 +5,15 @@ import { nextRefresh } from './refresh.js'
 import { FRAME_PATH, RENDER_INTERVAL_MS } from './config.js'
 
 async function renderAndPush(counter: number): Promise<number> {
-  const { canvas, ctx } = createFrame()
-  renderScreen(ctx, new Date())
-  writeFramePng(canvas, FRAME_PATH)
-
   const decision = nextRefresh(counter)
   try {
+    const { canvas, ctx } = createFrame()
+    renderScreen(ctx, new Date())
+    writeFramePng(canvas, FRAME_PATH)
     await pushFrame(FRAME_PATH, decision.full)
     console.log(`[render] pushed frame (full=${decision.full})`)
   } catch (err) {
-    console.error(`[render] push failed: ${(err as Error).message}`)
+    console.error(`[render] frame failed: ${(err as Error).message}`)
   }
   return decision.counter
 }
