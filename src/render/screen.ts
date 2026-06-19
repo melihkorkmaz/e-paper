@@ -3,7 +3,8 @@ import { PANEL_WIDTH, PANEL_HEIGHT } from "../config.js";
 import { line } from "./draw.js";
 import { renderSpotify } from "./widgets/spotify.js";
 import { getSpotify } from "../data/spotify.js";
-import { renderPrinter, MOCK_PRINTER } from "./widgets/printer.js";
+import { renderPrinter } from "./widgets/printer.js";
+import { getPrinter } from "../data/printer.js";
 import { renderInternet } from "./widgets/internet.js";
 import { getInternet } from "../data/internet.js";
 import { renderWeather } from "./widgets/weather.js";
@@ -46,7 +47,7 @@ export function renderScreen(ctx: SKRSContext2D, now: Date): void {
 
   // Column 1, row 2: Bambu printer status
   line(ctx, COL_DEFAULT_PAD, ROW_DIVIDER_1, COL_W - COL_DEFAULT_PAD, ROW_DIVIDER_1);
-  renderPrinter(ctx, COL_DEFAULT_PAD, ROW2_Y, COL_CONTENT_W, MOCK_PRINTER);
+  renderPrinter(ctx, COL_DEFAULT_PAD, ROW2_Y, COL_CONTENT_W, getPrinter());
 
   // Column 1, row 3: Internet quality
   line(ctx, COL_DEFAULT_PAD, ROW_DIVIDER_2, COL_W - COL_DEFAULT_PAD, ROW_DIVIDER_2);

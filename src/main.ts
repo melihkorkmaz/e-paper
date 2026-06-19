@@ -9,12 +9,14 @@ import {
   PING_REFRESH_MS,
   SPOTIFY_REFRESH_MS,
   CLAUDE_REFRESH_MS,
+  PRINTER_REFRESH_MS,
 } from "./config.js";
 import { preloadIcons } from "./render/icons.js";
 import { refreshWeather } from "./data/weather.js";
 import { refreshInternet } from "./data/internet.js";
 import { refreshSpotify } from "./data/spotify.js";
 import { refreshClaude } from "./data/claude.js";
+import { refreshPrinter } from "./data/printer.js";
 
 async function renderAndPush(counter: number): Promise<number> {
   const decision = nextRefresh(counter);
@@ -55,9 +57,10 @@ async function main(): Promise<void> {
     refreshSpotify(),
   ]);
 
-  // Claude usage runs a Python subprocess (up to 30s) — don't block the first
-  // frame; kick it off and let a later render pick up the result.
+  // Claude usage and printer status run Python subprocesses (several seconds) —
+  // don't block the first frame; let a later render pick up the result.
   void refreshClaude();
+  void refreshPrinter();
 
   // First frame always forces a full refresh (clears the panel), like main.py startup.
   let counter = await renderAndPush(600);
@@ -88,6 +91,11 @@ async function main(): Promise<void> {
   setInterval(() => {
     void refreshClaude();
   }, CLAUDE_REFRESH_MS);
+
+  // Poll the Bambu printer via python/printer.py.
+  setInterval(() => {
+    void refreshPrinter();
+  }, PRINTER_REFRESH_MS);
 }
 
 void main();

@@ -45,3 +45,12 @@ export const PYTHON_BIN = process.env.PYTHON_BIN ?? "python3";
 export const CLAUDE_SCRIPT = join(ROOT, "claude.py");
 export const CLAUDE_USAGE_FILE = join(ROOT, "usage.json");
 export const CLAUDE_REFRESH_MS = 600_000;
+
+// Bambu printer status via the python/printer.py bridge. Set creds in .env.
+export const PRINTER = {
+  ip: process.env.PRINTER_IP ?? "",
+  serial: process.env.PRINTER_SERIAL ?? "",
+  accessCode: process.env.PRINTER_ACCESS_CODE ?? "",
+};
+export const PRINTER_SCRIPT = join(ROOT, "python", "printer.py");
+export const PRINTER_REFRESH_MS = 15_000;
